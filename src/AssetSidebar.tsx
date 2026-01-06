@@ -52,7 +52,7 @@ export function AssetSidebar(props: AssetSidebarProps) {
   useEffect(() => {
     // persist pins
     localStorage.setItem('flagships.pins', JSON.stringify(pinnedIds));
-  }, []); // intentionally simple
+  }, [pinnedIds]);
 
   useEffect(() => {
     const q = query.trim();
@@ -92,18 +92,25 @@ export function AssetSidebar(props: AssetSidebarProps) {
   }, [query, onlyPinned, sort]);
 
   const sorted = useMemo(() => {
-    if (sort === 'title') {
-      return visibleAssets.sort((a, b) => a.title.localeCompare(b.title));
-    }
-    if (sort === 'tags') {
-      return visibleAssets.sort((a, b) => {
+    const sortFn = (a: Asset, b: Asset) => {
+      // Pinned items always come first
+      const aPinned = pinnedIds[a.id] ? 1 : 0;
+      const bPinned = pinnedIds[b.id] ? 1 : 0;
+      if (aPinned !== bPinned) return bPinned - aPinned;
+
+      // Then apply the selected sort
+      if (sort === 'title') {
+        return a.title.localeCompare(b.title);
+      }
+      if (sort === 'tags') {
         const aTag = (a.tags || [])[0] || '';
         const bTag = (b.tags || [])[0] || '';
         return aTag.localeCompare(bTag);
-      });
-    }
-    return visibleAssets.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
-  }, [visibleAssets, sort]);
+      }
+      return b.updatedAtMs - a.updatedAtMs;
+    };
+    return [...visibleAssets].sort(sortFn);
+  }, [visibleAssets, sort, pinnedIds]);
 
   const displayedAssets = sorted.slice(0, visibleCount);
   const hasMore = visibleCount < sorted.length;
@@ -184,13 +191,22 @@ export function AssetSidebar(props: AssetSidebarProps) {
                       setPinnedIds({ ...pinnedIds, [asset.id]: !isPinned });
                     }}
                     style={{
-                      fontSize: 16,
-                      opacity: isPinned ? 1 : 0.35,
+                      opacity: isPinned ? 1 : 0.3,
                       cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
                     }}
                     title={isPinned ? 'Unpin' : 'Pin'}
                   >
-                    ★
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="black"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M16 4V2H8v2H2v2h2l1.5 9H6v2h5v5l1 1 1-1v-5h5v-2h-.5L19 6h2V4h-5zm.5 9h-9L6.2 6h11.6l-1.3 7z" />
+                    </svg>
                   </span>
 
                   </div>
