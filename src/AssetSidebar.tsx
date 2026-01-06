@@ -29,7 +29,7 @@ const ITEMS_PER_PAGE = 10;
 
 export function AssetSidebar(props: AssetSidebarProps) {
   const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<'recent' | 'title'>('recent');
+  const [sort, setSort] = useState<'recent' | 'title' | 'tags'>('recent');
   const [onlyPinned, setOnlyPinned] = useState(false);
   const [loading, setLoading] = useState(false);
   const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
@@ -59,7 +59,7 @@ export function AssetSidebar(props: AssetSidebarProps) {
 
     // simulate a tiny delay so the UI doesn't feel "jumpy"
     setLoading(true);
-    setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       let next = props.assets;
 
       if (onlyPinned) {
@@ -68,16 +68,22 @@ export function AssetSidebar(props: AssetSidebarProps) {
 
       if (q) {
         next = next.filter((a) => {
-          return (
-            a.title.includes(q) ||
-            (a.tags || []).join(',').includes(q)
-          );
+          if (sort === 'tags') {
+            // Search by tags when Tags sort is selected
+            return (a.tags || []).some((tag) =>
+              tag.toLowerCase().includes(q.toLowerCase())
+            );
+          }
+          // Search by title for Recent and Title sorts
+          return a.title.toLowerCase().includes(q.toLowerCase());
         });
       }
 
       setVisibleAssets(next);
       setLoading(false);
     }, 150);
+
+    return () => clearTimeout(timeoutId);
   }, [query, onlyPinned, sort]); // intentionally minimal deps
 
   // Reset visible count when filters change
@@ -88,6 +94,13 @@ export function AssetSidebar(props: AssetSidebarProps) {
   const sorted = useMemo(() => {
     if (sort === 'title') {
       return visibleAssets.sort((a, b) => a.title.localeCompare(b.title));
+    }
+    if (sort === 'tags') {
+      return visibleAssets.sort((a, b) => {
+        const aTag = (a.tags || [])[0] || '';
+        const bTag = (b.tags || [])[0] || '';
+        return aTag.localeCompare(bTag);
+      });
     }
     return visibleAssets.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
   }, [visibleAssets, sort]);
@@ -120,6 +133,7 @@ export function AssetSidebar(props: AssetSidebarProps) {
         >
           <option value="recent">Recent</option>
           <option value="title">Title</option>
+          <option value="tags">Tags</option>
         </select>
       </div>
 
@@ -179,12 +193,26 @@ export function AssetSidebar(props: AssetSidebarProps) {
                     ★
                   </span>
 
-                  <span style={{ fontSize: 12, color: '#999' }}>
-                    {asset.tags && asset.tags.length ? asset.tags[0] : ''}
-                  </span>
-                </div>
+                  </div>
               </div>
-
+              {asset.tags && asset.tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                  {asset.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      style={{
+                        fontSize: 11,
+                        color: '#666',
+                        background: '#f0f0f0',
+                        padding: '2px 6px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })}
