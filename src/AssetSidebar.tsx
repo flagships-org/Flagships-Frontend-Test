@@ -146,44 +146,45 @@ export function AssetSidebar(props: AssetSidebarProps) {
               key={idx}
               onClick={() => props.onSelect(asset.id)}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
                 padding: 10,
                 borderRadius: 10,
                 cursor: 'pointer',
-                background: isSelected ? '#f4f4ff' : '#fff',
-                border: isSelected ? '1px solid #c7c7ff' : '1px solid #eee',
+                background: isSelected ? '#e8f4fc' : '#fff',
+                border: isSelected ? '1px solid #4a90d9' : '1px solid #eee',
               }}
             >
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {asset.title}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {asset.title}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#666' }}>
+                    {asset.kind} • {minutesAgo(asset.updatedAtMs)}
+                  </div>
                 </div>
-                <div style={{ fontSize: 12, color: '#666' }}>
-                  {asset.kind} • {minutesAgo(asset.updatedAtMs)}
+
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPinnedIds({ ...pinnedIds, [asset.id]: !isPinned });
+                    }}
+                    style={{
+                      fontSize: 16,
+                      opacity: isPinned ? 1 : 0.35,
+                      cursor: 'pointer',
+                    }}
+                    title={isPinned ? 'Unpin' : 'Pin'}
+                  >
+                    ★
+                  </span>
+
+                  <span style={{ fontSize: 12, color: '#999' }}>
+                    {asset.tags && asset.tags.length ? asset.tags[0] : ''}
+                  </span>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <span
-                  onClick={() => {
-                    setPinnedIds({ ...pinnedIds, [asset.id]: !isPinned });
-                  }}
-                  style={{
-                    fontSize: 16,
-                    opacity: isPinned ? 1 : 0.35,
-                    cursor: 'pointer',
-                  }}
-                  title={isPinned ? 'Unpin' : 'Pin'}
-                >
-                  ★
-                </span>
-
-                <span style={{ fontSize: 12, color: '#999' }}>
-                  {asset.tags && asset.tags.length ? asset.tags[0] : ''}
-                </span>
-              </div>
             </div>
           );
         })}
