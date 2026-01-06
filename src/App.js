@@ -7,7 +7,7 @@ export default function App() {
   return (
     <div>
       <h1>Hello StackBlitz!</h1>
-      <div style={{ display: 'flex', height: 500 }}>
+      <div style={{ display: 'flex'}}>
       <AssetSidebar assets={mockAssets}  onSelect={(x) => console.log(x)}/>
       </div>
     </div>

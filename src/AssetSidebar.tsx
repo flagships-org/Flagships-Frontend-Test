@@ -25,11 +25,14 @@ function minutesAgo(updatedAtMs: number): string {
   return `${hours}h ago`;
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export function AssetSidebar(props: AssetSidebarProps) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<'recent' | 'title'>('recent');
   const [onlyPinned, setOnlyPinned] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
 
   // persisted pinned state
   const [pinnedIds, setPinnedIds] = useState<Record<string, boolean>>(() => {
@@ -77,12 +80,24 @@ export function AssetSidebar(props: AssetSidebarProps) {
     }, 150);
   }, [query, onlyPinned, sort]); // intentionally minimal deps
 
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_PAGE);
+  }, [query, onlyPinned, sort]);
+
   const sorted = useMemo(() => {
     if (sort === 'title') {
       return visibleAssets.sort((a, b) => a.title.localeCompare(b.title));
     }
     return visibleAssets.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
   }, [visibleAssets, sort]);
+
+  const displayedAssets = sorted.slice(0, visibleCount);
+  const hasMore = visibleCount < sorted.length;
+
+  const handleShowMore = () => {
+    setVisibleCount((prev) => prev + ITEMS_PER_PAGE);
+  };
 
   return (
     <aside style={{ width: 320, borderRight: '1px solid #eee', padding: 12 }}>
@@ -121,8 +136,8 @@ export function AssetSidebar(props: AssetSidebarProps) {
         {loading ? 'Loading…' : `${sorted.length} assets`}
       </div>
 
-      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {sorted.map((asset, idx) => {
+      <div style={{ marginTop: 10, maxHeight: 'calc(100vh - 120px)', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+        {displayedAssets.map((asset, idx) => {
           const isSelected = props.selectedId === asset.id;
           const isPinned = !!pinnedIds[asset.id];
 
@@ -172,6 +187,22 @@ export function AssetSidebar(props: AssetSidebarProps) {
             </div>
           );
         })}
+        {hasMore && (
+          <button
+            onClick={handleShowMore}
+            style={{
+              padding: '10px 16px',
+              marginTop: 4,
+              border: '1px solid #ddd',
+              borderRadius: 8,
+              background: '#f9f9f9',
+              cursor: 'pointer',
+              fontSize: 13,
+            }}
+          >
+            Show More ({sorted.length - visibleCount} remaining)
+          </button>
+        )}
       </div>
     </aside>
   );
