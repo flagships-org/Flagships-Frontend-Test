@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React,{ useEffect, useMemo, useState } from 'react';
 
 type AssetKind = 'pdf' | 'note' | 'news';
 
@@ -8,6 +8,7 @@ export type Asset = {
   kind: AssetKind;
   updatedAtMs: number;
   tags?: string[];
+  description?: string;
 };
 
 type AssetSidebarProps = {
