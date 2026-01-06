@@ -92,25 +92,18 @@ export function AssetSidebar(props: AssetSidebarProps) {
   }, [query, onlyPinned, sort]);
 
   const sorted = useMemo(() => {
-    const sortFn = (a: Asset, b: Asset) => {
-      // Pinned items always come first
-      const aPinned = pinnedIds[a.id] ? 1 : 0;
-      const bPinned = pinnedIds[b.id] ? 1 : 0;
-      if (aPinned !== bPinned) return bPinned - aPinned;
-
-      // Then apply the selected sort
-      if (sort === 'title') {
-        return a.title.localeCompare(b.title);
-      }
-      if (sort === 'tags') {
+    if (sort === 'title') {
+      return visibleAssets.sort((a, b) => a.title.localeCompare(b.title));
+    }
+    if (sort === 'tags') {
+      return visibleAssets.sort((a, b) => {
         const aTag = (a.tags || [])[0] || '';
         const bTag = (b.tags || [])[0] || '';
         return aTag.localeCompare(bTag);
-      }
-      return b.updatedAtMs - a.updatedAtMs;
-    };
-    return [...visibleAssets].sort(sortFn);
-  }, [visibleAssets, sort, pinnedIds]);
+      });
+    }
+    return visibleAssets.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+  }, [visibleAssets, sort]);
 
   const displayedAssets = sorted.slice(0, visibleCount);
   const hasMore = visibleCount < sorted.length;
