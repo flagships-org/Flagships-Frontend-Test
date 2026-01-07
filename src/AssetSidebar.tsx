@@ -74,7 +74,7 @@ export function AssetSidebar(props: AssetSidebarProps) {
       setVisibleAssets(next);
       setLoading(false);
     }, 150);
-  }, [query, onlyPinned, sort]); // intentionally minimal deps
+  }, [query, onlyPinned, sort, props.assets]); // intentionally minimal deps
 
   const sorted = useMemo(() => {
     if (sort === 'title') {
