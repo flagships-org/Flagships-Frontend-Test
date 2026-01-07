@@ -27,7 +27,10 @@ function minutesAgo(updatedAtMs: number): string {
 export function AssetSidebar(props: AssetSidebarProps) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<'recent' | 'title'>('recent');
-  const [onlyPinned, setOnlyPinned] = useState(false);
+  const [onlyPinned, setOnlyPinned] = useState(() => {
+    const raw = localStorage.getItem('flagships.onlyPinned');
+    return raw ? JSON.parse(raw) : false;
+  });
   const [loading, setLoading] = useState(false);
 
   // persisted pinned state
@@ -35,6 +38,14 @@ export function AssetSidebar(props: AssetSidebarProps) {
     const raw = localStorage.getItem('flagships.pins');
     return raw ? JSON.parse(raw) : {};
   });
+
+  useEffect(() => {
+    localStorage.setItem(
+      'flagships.onlyPinned',
+        JSON.stringify(onlyPinned)
+      );
+  }, [onlyPinned]);
+
 
   // keep a "visible list" in state so we can simulate a tiny delay while typing
   const [visibleAssets, setVisibleAssets] = useState<Asset[]>(props.assets);
