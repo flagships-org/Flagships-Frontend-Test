@@ -48,7 +48,7 @@ export function AssetSidebar(props: AssetSidebarProps) {
   useEffect(() => {
     // persist pins
     localStorage.setItem('flagships.pins', JSON.stringify(pinnedIds));
-  }, []); // intentionally simple
+  }, [pinnedIds]); // intentionally simple
 
   useEffect(() => {
     const q = query.trim();
@@ -65,8 +65,8 @@ export function AssetSidebar(props: AssetSidebarProps) {
       if (q) {
         next = next.filter((a) => {
           return (
-            a.title.includes(q) ||
-            (a.tags || []).join(',').includes(q)
+            a.title.toLowerCase().includes(q.toLowerCase()) ||
+            (a.tags || []).join(',').toLowerCase().includes(q.toLowerCase())
           );
         });
       }
@@ -74,13 +74,17 @@ export function AssetSidebar(props: AssetSidebarProps) {
       setVisibleAssets(next);
       setLoading(false);
     }, 150);
-  }, [query, onlyPinned, sort, props.assets]); // intentionally minimal deps
+  }, [query, onlyPinned, sort, props.assets, pinnedIds]); // intentionally minimal deps
 
   const sorted = useMemo(() => {
+    const copy = [...visibleAssets]
     if (sort === 'title') {
-      return visibleAssets.sort((a, b) => a.title.localeCompare(b.title));
+      copy.sort((a, b) => a.title.localeCompare(b.title));
     }
-    return visibleAssets.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+    else{
+    copy.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+    }
+    return copy
   }, [visibleAssets, sort]);
 
   return (
