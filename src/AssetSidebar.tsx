@@ -155,7 +155,8 @@ export function AssetSidebar(props: AssetSidebarProps) {
 
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <span
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setPinnedIds({ ...pinnedIds, [asset.id]: !isPinned });
                   }}
                   style={{
