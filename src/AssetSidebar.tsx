@@ -27,7 +27,10 @@ function minutesAgo(updatedAtMs: number): string {
 export function AssetSidebar(props: AssetSidebarProps) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<'recent' | 'title'>('recent');
-  const [onlyPinned, setOnlyPinned] = useState(false);
+  const [onlyPinned, setOnlyPinned] = useState(() => {
+    const raw = localStorage.getItem('flagships.onlyPinned');
+    return raw ? JSON.parse(raw) : false;
+  });
   const [loading, setLoading] = useState(false);
 
   // persisted pinned state
@@ -35,6 +38,14 @@ export function AssetSidebar(props: AssetSidebarProps) {
     const raw = localStorage.getItem('flagships.pins');
     return raw ? JSON.parse(raw) : {};
   });
+
+  useEffect(() => {
+    localStorage.setItem(
+      'flagships.onlyPinned',
+        JSON.stringify(onlyPinned)
+      );
+  }, [onlyPinned]);
+
 
   // keep a "visible list" in state so we can simulate a tiny delay while typing
   const [visibleAssets, setVisibleAssets] = useState<Asset[]>(props.assets);
@@ -48,7 +59,7 @@ export function AssetSidebar(props: AssetSidebarProps) {
   useEffect(() => {
     // persist pins
     localStorage.setItem('flagships.pins', JSON.stringify(pinnedIds));
-  }, []); // intentionally simple
+  }, [pinnedIds]); // intentionally simple
 
   useEffect(() => {
     const q = query.trim();
@@ -65,8 +76,8 @@ export function AssetSidebar(props: AssetSidebarProps) {
       if (q) {
         next = next.filter((a) => {
           return (
-            a.title.includes(q) ||
-            (a.tags || []).join(',').includes(q)
+            a.title.toLowerCase().includes(q.toLowerCase()) ||
+            (a.tags || []).join(',').toLowerCase().includes(q.toLowerCase())
           );
         });
       }
@@ -74,13 +85,17 @@ export function AssetSidebar(props: AssetSidebarProps) {
       setVisibleAssets(next);
       setLoading(false);
     }, 150);
-  }, [query, onlyPinned, sort]); // intentionally minimal deps
+  }, [query, onlyPinned, sort, props.assets, pinnedIds]); // intentionally minimal deps
 
   const sorted = useMemo(() => {
+    const copy = [...visibleAssets]
     if (sort === 'title') {
-      return visibleAssets.sort((a, b) => a.title.localeCompare(b.title));
+      copy.sort((a, b) => a.title.localeCompare(b.title));
     }
-    return visibleAssets.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+    else{
+    copy.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
+    }
+    return copy
   }, [visibleAssets, sort]);
 
   return (
@@ -151,7 +166,8 @@ export function AssetSidebar(props: AssetSidebarProps) {
 
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <span
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setPinnedIds({ ...pinnedIds, [asset.id]: !isPinned });
                   }}
                   style={{
