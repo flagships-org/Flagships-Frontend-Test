@@ -48,14 +48,14 @@ export function AssetSidebar(props: AssetSidebarProps) {
   useEffect(() => {
     // persist pins
     localStorage.setItem('flagships.pins', JSON.stringify(pinnedIds));
-  }, []); // intentionally simple
+  }, [pinnedIds]); // intentionally simple- monitor pinnedIds only
 
   useEffect(() => {
     const q = query.trim();
-
-    // simulate a tiny delay so the UI doesn't feel "jumpy"
     setLoading(true);
-    setTimeout(() => {
+
+    // assign to a variable so we can clear it
+    const timer = setTimeout(() => {
       let next = props.assets;
 
       if (onlyPinned) {
@@ -63,10 +63,12 @@ export function AssetSidebar(props: AssetSidebarProps) {
       }
 
       if (q) {
+        const lowerQ = q.toLowerCase();
         next = next.filter((a) => {
+          // added ?. before new toLowerCase() check
           return (
-            a.title.includes(q) ||
-            (a.tags || []).join(',').includes(q)
+            a.title?.toLowerCase().includes(lowerQ) ||
+            (a.tags || []).join(',').toLowerCase().includes(lowerQ)
           );
         });
       }
@@ -74,14 +76,32 @@ export function AssetSidebar(props: AssetSidebarProps) {
       setVisibleAssets(next);
       setLoading(false);
     }, 150);
+
+    // only checks the last typing according to the timer settings to increase efficiency
+    return () => clearTimeout(timer);
+
   }, [query, onlyPinned, sort]); // intentionally minimal deps
 
+  // new: ranking algorithm (Pinned items first, then selected sort)
   const sorted = useMemo(() => {
-    if (sort === 'title') {
-      return visibleAssets.sort((a, b) => a.title.localeCompare(b.title));
-    }
-    return visibleAssets.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
-  }, [visibleAssets, sort]);
+    // Create a copy to sort safely
+    const items = [...visibleAssets];
+    
+    return items.sort((a, b) => {
+      const isAPinned = pinnedIds[a.id];
+      const isBPinned = pinnedIds[b.id];
+
+      // logic: Pinned items always on top
+      if (isAPinned && !isBPinned) return -1;
+      if (!isAPinned && isBPinned) return 1;
+
+      // logic: Secondary sort (Title or Recent)
+      if (sort === 'title') {
+        return a.title.localeCompare(b.title);
+      }
+      return b.updatedAtMs - a.updatedAtMs;
+    });
+  }, [visibleAssets, sort, pinnedIds]);
 
   return (
     <aside style={{ width: 320, borderRight: '1px solid #eee', padding: 12 }}>
@@ -127,7 +147,7 @@ export function AssetSidebar(props: AssetSidebarProps) {
 
           return (
             <div
-              key={idx}
+              key={asset.id}
               onClick={() => props.onSelect(asset.id)}
               style={{
                 display: 'flex',
@@ -151,8 +171,9 @@ export function AssetSidebar(props: AssetSidebarProps) {
 
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <span
-                  onClick={() => {
-                    setPinnedIds({ ...pinnedIds, [asset.id]: !isPinned });
+                  onClick={(e) => {
+                  e.stopPropagation(); // stops the click from reaching the parent container
+                  setPinnedIds({ ...pinnedIds, [asset.id]: !isPinned }); 
                   }}
                   style={{
                     fontSize: 16,
